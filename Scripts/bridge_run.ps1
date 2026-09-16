@@ -41,18 +41,27 @@ Copy-Item $Script (Join-Path $inbox $name)
 
 $deadline = (Get-Date).AddSeconds($TimeoutSec)
 $shown = 0
+function Get-CompleteLines($path) {
+    # only lines terminated by a newline: the editor may be mid-write on the last one
+    $raw = Get-Content $path -Raw -ErrorAction SilentlyContinue
+    if (-not $raw) { return @() }
+    $lines = $raw -split "`r?`n"
+    if (-not $raw.EndsWith("`n")) { $lines = $lines[0..($lines.Count - 2)] }
+    return @($lines | Where-Object { $_ -ne "" })
+}
 while (-not (Test-Path $log)) {
     if ((Get-Date) -gt $deadline) {
         Write-Output "TIMEOUT after ${TimeoutSec}s waiting for $log (the editor may still be running the script; check Output Log for [bridge])"
         exit 3
     }
-    if (Test-Path $progress) {   # stream progress lines while waiting
-        $lines = Get-Content $progress -ErrorAction SilentlyContinue
+    if (Test-Path $progress) {   # stream finished progress lines while waiting
+        $lines = Get-CompleteLines $progress
         if ($lines.Count -gt $shown) { $lines[$shown..($lines.Count - 1)]; $shown = $lines.Count }
     }
     Start-Sleep -Milliseconds 500
 }
 Start-Sleep -Milliseconds 200
-$final = Get-Content $log
-$final | Select-Object -First 1                     # STATUS line
-$final | Select-Object -Skip (1 + $shown)           # whatever was not streamed yet
+$final = @(Get-Content $log)
+$body = @($final | Select-Object -Skip 1 | Where-Object { $_ -ne "" })
+if ($body.Count -gt $shown) { $body[$shown..($body.Count - 1)] }   # whatever was not streamed yet
+$final[0]                                                          # STATUS line, last
