@@ -145,5 +145,9 @@ def _tick(delta_seconds):
         _running = False
 
 
-unreal.register_slate_post_tick_callback(_tick)
-unreal.log("[bridge] EditorBridge active - inbox: %s" % INBOX)
+# Only meaningful in the interactive editor: commandlets (-run=...) have no UI loop to tick.
+if "-run=" in unreal.SystemLibrary.get_command_line().lower():
+    unreal.log("[bridge] commandlet session, bridge not started")
+else:
+    unreal.register_slate_post_tick_callback(_tick)
+    unreal.log("[bridge] EditorBridge active - inbox: %s" % INBOX)
