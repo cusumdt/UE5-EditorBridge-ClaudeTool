@@ -13,7 +13,7 @@ Born from a production VR project (UE 5.7) where the agent refactored a 30-graph
 | `Source/EditorBridge` (editor module) | Three Python-visible function libraries: **BlueprintTools** (variables, references, components, compile), **GraphTools** (read graphs, add/connect/delete nodes, retype macro pins), **AssetTools** (loaded static meshes with LOD/triangle layout and resident ray tracing BLAS memory). |
 | `Content/Python/init_unreal.py` | **The bridge.** Polls `<Project>/Saved/EditorBridge/inbox/` once per second and executes each `.py` inside the editor, in one undoable transaction, writing the output to `outbox/<name>.log`. |
 | `Content/Python/editorbridge/` | Tiny helper so the same script runs through the bridge or the commandlet (`args()`, `log()`, `load_blueprint()`, `compile_and_report()`). |
-| `Scripts/` | Ready-made, argument-driven scripts (dump graphs, find references, compile, rename/retarget variables, fix orphaned pins, LODs, component properties, material parameters, ray tracing audit). |
+| `Scripts/` | Ready-made, argument-driven scripts (dump graphs, find references, compile, rename/retarget variables, fix orphaned pins, LODs, component properties, material parameters, ray tracing audit, level lights). |
 | `Scripts/bridge_run.ps1` | Submits a script + args to the bridge and prints the result (streams progress). |
 | `claude/` | Drop-in templates for Claude Code: a `CLAUDE.md` section, five agents (`bp-inspector`, `bp-migrator`, `ue-builder`, `asset-auditor`, `ue-code-reviewer`) and two skills (`/ue-build`, `/bp-check`). |
 
@@ -127,6 +127,7 @@ All functions are `static`, exposed as `unreal.EditorBridgeBlueprintTools.*`, `u
 | `find_referencers.py` | `-bp`, `-target` | no |
 | `list_hard_deps.py` | `-assets="a;b"`, `-all=1` | no |
 | `audit_rt_meshes.py` | `-top`, `-all=1` | no |
+| `list_lights.py` | `-mobility=Static;Stationary`, `-sort=intensity` | no |
 | `compile_blueprints.py` | `-bps`, `-save=1` | saves if asked |
 | `rename_variable.py` | `-bp`, `-old`, `-new`, `-dependents`, `-remove_old=1`, `-retarget=<class>` | yes |
 | `retarget_member_refs.py` | `-bps`, `-from`, `-to` | yes |
