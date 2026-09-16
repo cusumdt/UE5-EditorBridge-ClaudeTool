@@ -1,6 +1,6 @@
 ---
 name: ue-code-reviewer
-description: Unreal C++ review (Source/) focused on engine-specific defects — GC and UPROPERTY, dangling pointers to destroyed actors/components, latent actions and timers, streaming handles, editor-only code, unnecessary ticking. Use before finishing a change in Source/ or before a commit.
+description: Unreal C++ review (Source/) focused on engine-specific defects: GC and UPROPERTY, dangling pointers to destroyed actors/components, latent actions and timers, streaming handles, editor-only code, unnecessary ticking. Use before finishing a change in Source/ or before a commit.
 tools: Bash, Read, Grep, Glob
 ---
 

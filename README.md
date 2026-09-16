@@ -1,10 +1,10 @@
-# EditorBridge — script the Unreal Editor from an AI coding agent
+# EditorBridge: script the Unreal Editor from an AI coding agent
 
 An Unreal Engine 5 editor plugin that lets a coding agent (built for [Claude Code](https://claude.com/claude-code), usable by anything that can write files and run PowerShell) **inspect and modify Blueprints, components, materials and meshes by script**, either inside the running editor or headless.
 
 It exists because the stock scripting surface has gaps: `BlueprintEditorLibrary` cannot create nodes, re-point variable references across classes, fix orphaned pins, tell you *who* still references an asset inside a package, or measure ray tracing geometry memory. This plugin exposes those operations to Python and adds a small file-based bridge so scripts run inside the open editor without any network socket.
 
-Born from a production VR project (UE 5.7) where the agent refactored a 30-graph controller Blueprint, moved a Blueprint hierarchy onto a C++ base, generated LODs for 4M-triangle CAD meshes and audited ray tracing memory — all by script, with every step verifiable.
+Born from a production VR project (UE 5.7) where the agent refactored a 30-graph controller Blueprint, moved a Blueprint hierarchy onto a C++ base, generated LODs for 4M-triangle CAD meshes and audited ray tracing memory, all by script and with every step verifiable.
 
 ## What you get
 
@@ -53,7 +53,7 @@ For Claude Code: copy `claude/agents/*` and `claude/skills/*` into your project'
 ## Quick start
 
 ```powershell
-# with the editor OPEN — list the graphs of a Blueprint
+# with the editor OPEN: list the graphs of a Blueprint
 .\Plugins\EditorBridge\Scripts\bridge_run.ps1 -Project "D:\Proj\MyProject.uproject" `
     -Script .\Plugins\EditorBridge\Scripts\dump_graph.py -Args "-bp=/Game/Blueprints/BP_Controller"
 
@@ -63,7 +63,7 @@ For Claude Code: copy `claude/agents/*` and `claude/skills/*` into your project'
 # who still hard-references BP_OldTruck inside BP_Controller?
 ... -Script .\Plugins\EditorBridge\Scripts\find_referencers.py -Args "-bp=/Game/Blueprints/BP_Controller -target=/Game/Trucks/BP_OldTruck.BP_OldTruck"
 
-# with the editor CLOSED — same script, args on the command line
+# with the editor CLOSED: same script, args on the command line
 & "C:\...\UE_5.7\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "D:\Proj\MyProject.uproject" -run=pythonscript `
     -script="D:\Proj\Plugins\EditorBridge\Scripts\dump_graph.py" -bp=/Game/Blueprints/BP_Controller -unattended -nopause -nosplash -stdout -FullStdOutLogOutput
 ```
@@ -138,17 +138,17 @@ All functions are `static`, exposed as `unreal.EditorBridgeBlueprintTools.*`, `u
 
 ## How the bridge works, and its limits
 
-- **File based, local only.** No TCP port, no external process inside the editor. Scripts are picked up from `<Project>/Saved/EditorBridge/inbox/` (override with `EDITOR_BRIDGE_DIR`), moved to `done/` before running, executed with `exec` in the editor's Python, output goes to `outbox/<name>.log` (`.progress` while running). Anyone who can write to that folder can run code in your editor — same trust level as writing to your project folder.
+- **File based, local only.** No TCP port, no external process inside the editor. Scripts are picked up from `<Project>/Saved/EditorBridge/inbox/` (override with `EDITOR_BRIDGE_DIR`), moved to `done/` before running, executed with `exec` in the editor's Python, output goes to `outbox/<name>.log` (`.progress` while running). Anyone who can write to that folder can run code in your editor, which is the same trust level as writing to your project folder.
 - **One transaction per script**: Ctrl+Z in the editor reverts everything the script did (unless the script saved assets).
 - **One script per tick, re-entrancy guarded.** Long editor operations (mesh builds, saves) pump the UI loop; the guard prevents the same script from being picked up twice.
-- **Blocking**: the editor is unresponsive while a script runs. Mesh reduction on multi-million-triangle assets takes tens of minutes and gigabytes of RAM — run one such asset per script.
+- **Blocking**: the editor is unresponsive while a script runs. Mesh reduction on multi-million-triangle assets takes tens of minutes and gigabytes of RAM, so run one such asset per script.
 - **PIE**: `EditorAssetLibrary` returns nothing while Play In Editor is active; stop Play first.
 - **C++ still needs the editor closed** (Live Coding blocks UBT). The bridge is for content.
 - Disable at any time by creating `<Project>/Saved/EditorBridge/bridge.disabled`.
 
 ## Recommended workflow for agents
 
-1. **Look**: `dump_graph.py` / `inspect_blueprint.py` — decide on the real graph, not on asset names. Follow reroute knots to the real source.
+1. **Look**: `dump_graph.py` / `inspect_blueprint.py`. Decide on the real graph, not on asset names. Follow reroute knots to the real source.
 2. **Plan**: scripts that modify graphs should support `-dry=1` and print nodes to create/delete and connections.
 3. **Apply**: create nodes first, delete old ones after, wire last; log connections the schema refuses.
 4. **Verify**: `compile_blueprint_with_log`; when cutting a dependency, `find_referencers` must return nothing and `list_hard_deps.py` must not list the package.
@@ -163,4 +163,4 @@ All functions are `static`, exposed as `unreal.EditorBridgeBlueprintTools.*`, `u
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

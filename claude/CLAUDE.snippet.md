@@ -7,7 +7,7 @@ Plugin: `Plugins/EditorBridge` (Python API `unreal.EditorBridgeBlueprintTools`,
 `unreal.EditorBridgeGraphTools`, `unreal.EditorBridgeAssetTools`; scripts in `Plugins/EditorBridge/Scripts`).
 
 ```powershell
-# C++ build — the editor MUST be closed (Live Coding blocks UBT). Check with Get-Process UnrealEditor
+# C++ build. The editor MUST be closed (Live Coding blocks UBT). Check with Get-Process UnrealEditor
 & "<ENGINE_ROOT>\Engine\Build\BatchFiles\Build.bat" <PROJECT>Editor Win64 Development -Project="<PROJECT_DIR>\<PROJECT>.uproject" -WaitMutex -NoHotReload
 
 # Python inside the OPEN editor (bridge): result in <PROJECT_DIR>/Saved/EditorBridge/outbox/<name>.log

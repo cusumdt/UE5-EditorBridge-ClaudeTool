@@ -1,6 +1,6 @@
 ---
 name: asset-auditor
-description: Read-only memory and dependency audit of assets — heaviest assets, hard-reference chains, single-LOD meshes, giant orphans, ray tracing geometry budget. Use it to diagnose VRAM/RAM usage or the "RAY TRACING GEOMETRY ... OVER BUDGET" warning and get a prioritized list.
+description: Read-only memory and dependency audit of assets: heaviest assets, hard-reference chains, single-LOD meshes, giant orphans, ray tracing geometry budget. Use it to diagnose VRAM/RAM usage or the "RAY TRACING GEOMETRY ... OVER BUDGET" warning and get a prioritized list.
 tools: Bash, PowerShell, Read, Grep, Glob
 model: sonnet
 ---

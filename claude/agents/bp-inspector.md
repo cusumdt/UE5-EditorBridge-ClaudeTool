@@ -1,6 +1,6 @@
 ---
 name: bp-inspector
-description: Read-only Blueprint investigator. Use it to answer "what does / who references / how is it wired" for a Blueprint — graphs, nodes, pins, variables, components, hard dependencies — without modifying anything. Returns a structured summary, not raw dumps.
+description: Read-only Blueprint investigator. Use it to answer "what does / who references / how is it wired" for a Blueprint (graphs, nodes, pins, variables, components, hard dependencies) without modifying anything. Returns a structured summary, not raw dumps.
 tools: Bash, PowerShell, Read, Grep, Glob
 model: sonnet
 ---

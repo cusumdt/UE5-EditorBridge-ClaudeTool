@@ -1,5 +1,5 @@
 """
-EditorBridge — runs Python scripts inside the open Unreal Editor from the outside.
+EditorBridge runs Python scripts inside the open Unreal Editor from the outside.
 
 PythonScriptPlugin executes this file when the editor starts. Every second it looks for *.py
 files in  <Project>/Saved/EditorBridge/inbox/ , executes the first one INSIDE the editor
