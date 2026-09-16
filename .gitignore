@@ -1,0 +1,9 @@
+# Unreal build output
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+*.pdb
+
+# Bridge exchange folders live under <Project>/Saved/EditorBridge (outside this repo)
+__pycache__/

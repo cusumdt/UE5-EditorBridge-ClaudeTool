@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Editor Bridge (Claude Code tooling)",
+	"Description": "Script Unreal Editor work from an AI coding agent: Blueprint graph/variable/component tooling exposed to Python, a file-based bridge that runs scripts inside the open editor, and asset/memory diagnostics.",
+	"Category": "Scripting",
+	"CreatedBy": "Cristian Cusumano",
+	"CreatedByURL": "https://github.com/cusumdt/UE5-EditorBridge-ClaudeTool",
+	"DocsURL": "https://github.com/cusumdt/UE5-EditorBridge-ClaudeTool#readme",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/cusumdt/UE5-EditorBridge-ClaudeTool/issues",
+	"EngineVersion": "5.7.0",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "EditorBridge",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{ "Name": "PythonScriptPlugin", "Enabled": true },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true }
+	]
+}
