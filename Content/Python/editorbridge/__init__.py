@@ -43,6 +43,11 @@ def arg_list(value, sep=";"):
     return [v.strip() for v in (value or "").split(sep) if v.strip()]
 
 
+def flag(value):
+    """True for '1', 'true', 'yes', 'on' (case-insensitive); False for anything else, including '0'."""
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
 def log(msg):
     """Script output: outbox log + Output Log in bridge mode, Output Log in commandlet mode."""
     (_LOG or unreal.log)(str(msg))
@@ -50,6 +55,13 @@ def log(msg):
 
 def in_bridge():
     return _ARGS is not None
+
+
+def is_dirty(obj):
+    """Whether the package of an asset has unsaved changes (UPackage.IsDirty is not exposed to Python)."""
+    pkg = obj.get_outermost()
+    utils = unreal.EditorLoadingAndSavingUtils
+    return pkg in utils.get_dirty_content_packages() or pkg in utils.get_dirty_map_packages()
 
 
 def load_blueprint(path):
@@ -69,6 +81,8 @@ def compile_and_report(bp, save=False):
             log("    " + m)
     if save and not has_errors:
         log("    saved: %s" % unreal.EditorAssetLibrary.save_loaded_asset(bp, only_if_is_dirty=False))
+    elif not save and is_dirty(bp):
+        log("    not saved (pass -save=1, or Ctrl+S in the editor)")
     return has_errors
 
 
@@ -82,3 +96,25 @@ def load_class(path):
     if isinstance(asset, unreal.Blueprint):
         return unreal.BlueprintEditorLibrary.generated_class(asset)
     raise RuntimeError("class not found: %s" % path)
+
+
+class track_saves(object):
+    """
+    Context manager around unreal.EditorBridgeSaveGuard: records every package saved inside the
+    block, backs up the file on disk first (when backup_dir is given) and can block saves
+    altogether. The bridge wraps every script in it; use it yourself in commandlet mode:
+
+        with track_saves(backup_dir="D:/Proj/Saved/EditorBridge/backup/run1") as saves:
+            ...
+        for line in saves.events: log(line)     # "saved: ..." / "blocked: ..."
+    """
+    def __init__(self, backup_dir="", block=False):
+        self.backup_dir, self.block, self.events = backup_dir or "", bool(block), []
+
+    def __enter__(self):
+        unreal.EditorBridgeSaveGuard.begin(self.backup_dir, self.block)
+        return self
+
+    def __exit__(self, *exc):
+        self.events = list(unreal.EditorBridgeSaveGuard.end())
+        return False

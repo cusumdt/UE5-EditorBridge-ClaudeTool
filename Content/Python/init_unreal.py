@@ -5,12 +5,16 @@ PythonScriptPlugin executes this file when the editor starts. Every second it lo
 files in  <Project>/Saved/EditorBridge/inbox/ , executes the first one INSIDE the editor
 (full `unreal` API, same as the Python console) and writes the captured output to
 <Project>/Saved/EditorBridge/outbox/<name>.log . Each script runs in one editor transaction,
-so Ctrl+Z undoes it as a whole.
+so Ctrl+Z undoes it in memory as a whole.
 
   * Arguments: an optional  <name>.args  sidecar next to the script ("-bp=/Game/X -graph=EventGraph"),
     exposed to the script through  editorbridge.args() .
   * Progress: lines are mirrored to the Output Log ([bridge] prefix) and to
     outbox/<name>.progress while the script runs; the final .log is written at the end.
+  * Saves: every package the script writes to disk is listed at the end of the log under
+    "---- disk", and the previous file is copied first to  backup/<run-id>/<project-relative path> .
+    bridge_run.ps1 -Rollback <run-id>  puts those files back.  -nosave=1  in the args (or a
+    <Project>/Saved/EditorBridge/bridge.nosave  file) makes every save fail instead.
   * Disable: create  <Project>/Saved/EditorBridge/bridge.disabled .
   * Override the exchange folder with the EDITOR_BRIDGE_DIR environment variable.
 
@@ -18,6 +22,7 @@ Submit scripts with  Scripts/bridge_run.ps1  (see README) or by copying files in
 """
 import io
 import os
+import shutil
 import sys
 import time
 import traceback
@@ -31,10 +36,13 @@ BASE         = os.path.normpath(os.environ.get("EDITOR_BRIDGE_DIR") or os.path.j
 INBOX        = os.path.join(BASE, "inbox")
 OUTBOX       = os.path.join(BASE, "outbox")
 DONE         = os.path.join(BASE, "done")
+BACKUP       = os.path.join(BASE, "backup")
 DISABLED     = os.path.join(BASE, "bridge.disabled")
+NOSAVE       = os.path.join(BASE, "bridge.nosave")
 POLL_SECONDS = 1.0
+KEEP_BACKUPS = 30   # most recent runs with backups to keep
 
-for d in (INBOX, OUTBOX, DONE):
+for d in (INBOX, OUTBOX, DONE, BACKUP):
     os.makedirs(d, exist_ok=True)
 
 _last_poll = 0.0
@@ -69,11 +77,26 @@ def _read_args(script_path):
     return editorbridge.parse_args(text)
 
 
+def _prune_backups():
+    """Keeps the KEEP_BACKUPS most recent run folders; removes empty ones (runs that saved nothing)."""
+    try:
+        runs = sorted(os.path.join(BACKUP, d) for d in os.listdir(BACKUP) if os.path.isdir(os.path.join(BACKUP, d)))
+        for run in runs:
+            if not any(files for _, _, files in os.walk(run)):
+                shutil.rmtree(run, ignore_errors=True)
+        runs = [r for r in runs if os.path.isdir(r)]
+        for run in runs[:-KEEP_BACKUPS]:
+            shutil.rmtree(run, ignore_errors=True)
+    except OSError:
+        pass
+
+
 def _run_script(path):
     name = os.path.basename(path)
     stem = os.path.splitext(name)[0]
     status = "ok"
     started = time.time()
+    run_id = "%s_%s" % (stem, time.strftime("%Y%m%d-%H%M%S"))
 
     # Take the script (and its args) out of the inbox BEFORE running, so a nested tick can
     # never pick it up a second time.
@@ -97,10 +120,13 @@ def _run_script(path):
     }
     editorbridge._set_context(arg_dict, env["log"])
 
+    nosave = editorbridge.flag(arg_dict.get("nosave", "")) or os.path.exists(NOSAVE)
+    saves = editorbridge.track_saves(backup_dir=os.path.join(BACKUP, run_id), block=nosave)
+
     old_stdout, old_stderr = sys.stdout, sys.stderr
     sys.stdout = sys.stderr = out
     try:
-        with unreal.ScopedEditorTransaction("EditorBridge: " + name):
+        with saves, unreal.ScopedEditorTransaction("EditorBridge: " + name):
             exec(compile(code, path, "exec"), env)
     except SystemExit as e:
         status = "exit %s" % e.code if e.code not in (None, 0) else "ok"
@@ -110,6 +136,19 @@ def _run_script(path):
     finally:
         sys.stdout, sys.stderr = old_stdout, old_stderr
         editorbridge._set_context(None, None)
+        if unreal.EditorBridgeSaveGuard.is_active():   # only if track_saves.__exit__ itself failed
+            saves.events = list(unreal.EditorBridgeSaveGuard.end())
+
+    # What reached the disk. Everything else the script did lives in the undo transaction.
+    out.write("---- disk%s\n" % (" (nosave: every save was blocked)" if nosave else ""))
+    if saves.events:
+        for line in saves.events:
+            out.write(line + "\n")
+        if any(line.startswith("saved:") and "(backup:" in line for line in saves.events):
+            out.write("rollback: bridge_run.ps1 -Rollback %s\n" % run_id)
+    else:
+        out.write("no packages were saved\n")
+    _prune_backups()
 
     elapsed = time.time() - started
     result = "STATUS: %s (%.1fs)\n%s" % (status, elapsed, out.getvalue())

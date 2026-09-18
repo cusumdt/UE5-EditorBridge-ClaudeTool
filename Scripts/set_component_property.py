@@ -1,14 +1,16 @@
 """
 Sets an editor property on named components of one or more Blueprints (the template each
 Blueprint owns: own SCS node or inherited-component override, same object the Details panel
-edits). Compiles and saves the Blueprints that changed.
+edits). Compiles the Blueprints that changed.
   -bps="/Game/A;/Game/B"                  required
   -components="Engine;Suspension"         required (component variable names)
   -property=visible_in_ray_tracing        required (python property name)
   -value=false                            required (true/false, number or string)
+  -save=1                  optional: write the changed assets to disk (default: leave them
+                           dirty and undoable; the bridge lists what was saved)
 """
 import unreal
-from editorbridge import args, arg_list, log, load_blueprint, compile_and_report
+from editorbridge import args, arg_list, flag, log, load_blueprint, compile_and_report
 
 a = args()
 value = {"true": True, "false": False}.get(a["value"].lower(), a["value"])
@@ -32,4 +34,4 @@ for path in arg_list(a["bps"]):
         obj.modify(); obj.set_editor_property(a["property"], value); changed += 1
     log("%s: %d component(s) changed (%s)" % (bp.get_name(), changed, ", ".join(sorted(done)) or "none found"))
     if changed:
-        compile_and_report(bp, save=True)
+        compile_and_report(bp, save=flag(a.get("save")))

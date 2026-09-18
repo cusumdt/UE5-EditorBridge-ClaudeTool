@@ -1,11 +1,13 @@
 """
-Removes macro graphs from a Blueprint if (and only if) no graph instantiates them. Compiles + saves.
+Removes macro graphs from a Blueprint if (and only if) no graph instantiates them. Compiles.
   -bp=/Game/Path/BP_X          required
   -macros="Macro A;Macro B"    required
+  -save=1                  optional: write the changed assets to disk (default: leave them
+                           dirty and undoable; the bridge lists what was saved)
 """
 import re
 import unreal
-from editorbridge import args, arg_list, log, load_blueprint, compile_and_report
+from editorbridge import args, arg_list, flag, log, load_blueprint, compile_and_report
 
 a = args()
 bp = load_blueprint(a["bp"])
@@ -24,4 +26,4 @@ for macro in arg_list(a["macros"]):
     BEL.remove_graph(bp, graph); changed = True
     log("removed '%s'" % macro)
 if changed:
-    compile_and_report(bp, save=True)
+    compile_and_report(bp, save=flag(a.get("save")))

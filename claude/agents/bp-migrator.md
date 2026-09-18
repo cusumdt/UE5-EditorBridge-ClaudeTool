@@ -19,9 +19,13 @@ guessing node guids.
    replaced nodes). `connect_pins` returns a bool: log the refused ones with the schema message.
 4. **Verify**: `refresh_all_nodes` -> `compile_blueprint_with_log` -> if the goal was to cut a
    dependency, `find_referencers(bp, "/Game/.../BP_X.BP_X")` must return 0 lines and
-   `list_hard_deps.py` must not list the package. Save with `EditorAssetLibrary.save_loaded_asset`.
+   `list_hard_deps.py` must not list the package. Nothing is saved unless the script gets `-save=1`;
+   prefer leaving the result unsaved so the user can review it and press Ctrl+S or Ctrl+Z.
 5. If compile errors remain that you cannot fix, **do not save** (the user can Ctrl+Z in the editor)
    and report the literal messages.
+6. Report the `---- disk` section of the bridge log verbatim: it is the list of files that changed on
+   disk, and its `rollback:` line (`bridge_run.ps1 -Rollback <run-id>`) is how the user undoes a save.
+   To try an unfamiliar script safely, run it with `bridge_run.ps1 -NoSave` first.
 
 ## Execution
 

@@ -1,12 +1,14 @@
 """
 Sets scalar/vector parameters on a Material Instance (parameter overrides) or on a base
-Material (default value of the parameter node wired to each material input), then saves.
+Material (default value of the parameter node wired to each material input).
   -material=/Game/Path/M_X              required
   -scalars="Metallic=0;Specular=0.5"    optional (instance: any parameter name; base: Metallic, Specular, Roughness, Opacity)
   -vectors="Base Color=0,0,0,1"         optional (instance only)
+  -save=1                  optional: write the changed assets to disk (default: leave them
+                           dirty and undoable; the bridge lists what was saved)
 """
 import unreal
-from editorbridge import args, arg_list, log
+from editorbridge import args, arg_list, flag, log
 
 a = args()
 MEL, EAL = unreal.MaterialEditingLibrary, unreal.EditorAssetLibrary
@@ -38,4 +40,7 @@ else:
             log("%s: input node is %s, not edited" % (n, node.get_class().get_name())); continue
         log("%s: %s -> %s" % (n, old, v))
     MEL.recompile_material(mat)
-log("saved: %s" % EAL.save_loaded_asset(mat, only_if_is_dirty=False))
+if flag(a.get("save")):
+    log("saved: %s" % EAL.save_loaded_asset(mat, only_if_is_dirty=False))
+else:
+    log("not saved (pass -save=1, or Ctrl+S in the editor)")
